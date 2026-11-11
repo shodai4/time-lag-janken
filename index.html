@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>時差じゃんけん 〜 どこかの いつかの だれかとじゃんけん 〜</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts: Zen Maru Gothic & Shippori Mincho -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;700&family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <!-- 外部設定ファイル -->
+  <script src="config.js"></script>
+
+  <style>
+    body {
+      font-family: 'Zen Maru Gothic', sans-serif;
+      background-color: #030712;
+      color: #f3f4f6;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .font-mincho {
+      font-family: 'Shippori Mincho', serif;
+    }
+    /* 星空のきらめき背景 */
+    .star-bg {
+      background: radial-gradient(ellipse at bottom, #1e1b4b 0%, #090d16 60%, #030712 100%);
+      min-height: 100vh;
+    }
+    /* ガラスモーフィズム */
+    .glass-card {
+      background: rgba(30, 41, 59, 0.45);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+    .glass-button {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .glass-button:active {
+      transform: scale(0.95);
+      background: rgba(255, 255, 255, 0.15);
+    }
+    /* パルス光彩 */
+    @keyframes pulse-glow {
+      0%, 100% { opacity: 0.4; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(1.03); }
+    }
+    .animate-glow {
+      animation: pulse-glow 3s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="star-bg flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
+
+  <!-- メインコンテナ -->
+  <main class="w-full max-w-md mx-auto px-4 py-8 flex-1 flex flex-col justify-center">
+
+    <!-- ヘッダーエリア -->
+    <header class="text-center mb-8 relative">
+      <div class="inline-block px-3 py-1 rounded-full text-xs tracking-widest text-indigo-300 bg-indigo-950/60 border border-indigo-500/30 mb-3 backdrop-blur-sm">
+        TIME-LAG JANKEN
+      </div>
+      <h1 class="text-3xl font-bold tracking-tight text-white font-mincho mb-2 drop-shadow-md">
+        時差じゃんけん
+      </h1>
+      <p class="text-sm text-indigo-200/80 font-mincho tracking-wide">
+        どこかの　いつかの　だれかとじゃんけん
+      </p>
+      <div class="mt-3 text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
+        あなたが今放った手は、未来の誰かの対戦相手になり、<br>
+        あなたが出会うのは、過去の誰かが残した手です。
+      </div>
+    </header>
+
+    <!-- 入力・対戦フォーム画面 -->
+    <div id="section-form" class="space-y-6">
+      
+      <!-- 旅人プロフィール設定カード -->
+      <div class="glass-card rounded-2xl p-5 space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-indigo-300 mb-1.5">旅人の名前</label>
+          <input type="text" id="input-name" maxlength="20" placeholder="名もなき旅人"
+                 class="w-full bg-slate-900/60 border border-slate-700/60 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 transition placeholder:text-slate-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-indigo-300 mb-1.5">あなたの場所</label>
+            <select id="select-country" class="w-full bg-slate-900/60 border border-slate-700/60 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-400 transition">
+              <option value="JP|日本|🇯🇵" selected>🇯🇵 日本</option>
+              <option value="US|アメリカ|🇺🇸">🇺🇸 アメリカ</option>
+              <option value="FR|フランス|🇫🇷">🇫🇷 フランス</option>
+              <option value="GB|イギリス|🇬🇧">🇬🇧 イギリス</option>
+              <option value="DE|ドイツ|🇩🇪">🇩🇪 ドイツ</option>
+              <option value="IT|イタリア|🇮🇹">🇮🇹 イタリア</option>
+              <option value="TW|台湾|🇹🇼">🇹🇼 台湾</option>
+              <option value="KR|韓国|🇰🇷">🇰🇷 韓国</option>
+              <option value="AU|オーストラリア|🇦🇺">🇦🇺 オーストラリア</option>
+              <option value="CA|カナダ|🇨🇦">🇨🇦 カナダ</option>
+              <option value="BR|ブラジル|🇧🇷">🇧🇷 ブラジル</option>
+              <option value="ES|スペイン|🇪🇸">🇪🇸 スペイン</option>
+              <option value="SG|シンガポール|🇸🇬">🇸🇬 シンガポール</option>
+              <option value="WORLD|地球のどこか|🌍">🌍 その他</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-indigo-300 mb-1.5">ひとこと（任意）</label>
+            <input type="text" id="input-comment" maxlength="30" placeholder="夜風が気持ちいいです"
+                   class="w-full bg-slate-900/60 border border-slate-700/60 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-400 transition placeholder:text-slate-500">
+          </div>
+        </div>
+      </div>
+
+      <!-- 手の選択カード -->
+      <div class="glass-card rounded-2xl p-6 text-center">
+        <p class="text-xs tracking-widest text-indigo-300 mb-5 font-semibold">
+          時空へ放つ手を選んでください
+        </p>
+
+        <div class="grid grid-cols-3 gap-3">
+          <!-- グー -->
+          <button onclick="playJanken('rock')" class="glass-button group flex flex-col items-center justify-center py-5 px-2 rounded-2xl hover:border-indigo-400/50 hover:bg-indigo-950/40">
+            <span class="text-4xl mb-2 transition transform group-hover:scale-110">✊</span>
+            <span class="text-sm font-bold text-slate-200 group-hover:text-white">グー</span>
+          </button>
+          
+          <!-- チョキ -->
+          <button onclick="playJanken('scissors')" class="glass-button group flex flex-col items-center justify-center py-5 px-2 rounded-2xl hover:border-indigo-400/50 hover:bg-indigo-950/40">
+            <span class="text-4xl mb-2 transition transform group-hover:scale-110">✌️</span>
+            <span class="text-sm font-bold text-slate-200 group-hover:text-white">チョキ</span>
+          </button>
+          
+          <!-- パー -->
+          <button onclick="playJanken('paper')" class="glass-button group flex flex-col items-center justify-center py-5 px-2 rounded-2xl hover:border-indigo-400/50 hover:bg-indigo-950/40">
+            <span class="text-4xl mb-2 transition transform group-hover:scale-110">✋</span>
+            <span class="text-sm font-bold text-slate-200 group-hover:text-white">パー</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 通算戦績サマリー -->
+      <div class="flex items-center justify-between px-2 text-xs text-slate-400">
+        <div>あなたの時空戦績：<span id="stats-summary" class="font-bold text-slate-300">0勝 0敗 0分</span></div>
+        <button onclick="resetStats()" class="hover:text-rose-400 transition underline text-[11px]">戦績リセット</button>
+      </div>
+
+    </div>
+
+    <!-- ローディング（時空通信演出）画面 -->
+    <div id="section-loading" class="hidden text-center py-16 space-y-6">
+      <div class="relative w-24 h-24 mx-auto">
+        <div class="absolute inset-0 rounded-full border-2 border-indigo-500/20 animate-ping"></div>
+        <div class="absolute inset-2 rounded-full border-2 border-t-indigo-400 border-r-transparent border-b-purple-400 border-l-transparent animate-spin"></div>
+        <div class="absolute inset-0 flex items-center justify-center text-2xl">⏳</div>
+      </div>
+      <div class="space-y-2">
+        <p class="text-sm font-mincho text-indigo-200 tracking-wider">時空へ手を放っています…</p>
+        <p class="text-xs text-slate-400 font-sans" id="loading-subtext">世界線の彼方から誰かの手を受信中</p>
+      </div>
+    </div>
+
+    <!-- 結果発表画面 -->
+    <div id="section-result" class="hidden space-y-6 animate-fade-in">
+      
+      <!-- 対戦結果メインカード -->
+      <div class="glass-card rounded-2xl p-6 text-center space-y-6 relative overflow-hidden">
+        
+        <!-- 勝敗バッジ -->
+        <div>
+          <div id="result-badge" class="inline-block px-4 py-1.5 rounded-full text-sm font-bold tracking-wider mb-2">
+            <!-- 勝ち / 負け / あいこ -->
+          </div>
+          <p id="result-poetic-msg" class="text-xs text-indigo-200/90 font-mincho leading-relaxed px-2">
+            <!-- 詩的なメッセージ -->
+          </p>
+        </div>
+
+        <!-- 対決ビジュアル -->
+        <div class="grid grid-cols-2 gap-4 items-center py-2 relative">
+          <!-- 相手 -->
+          <div class="bg-slate-900/40 rounded-xl p-4 border border-slate-800">
+            <div class="text-xs text-slate-400 mb-1">対戦相手</div>
+            <div class="text-4xl mb-2" id="res-opp-icon">✊</div>
+            <div class="font-bold text-sm text-white" id="res-opp-hand-name">グー</div>
+            <div class="text-xs text-indigo-300 mt-1 flex items-center justify-center gap-1">
+              <span id="res-opp-flag">🇫🇷</span>
+              <span id="res-opp-name" class="truncate max-w-[100px]">Camille</span>
+            </div>
+            <div class="text-[10px] text-slate-400 mt-0.5" id="res-opp-time">3日前</div>
+          </div>
+
+          <!-- あなた -->
+          <div class="bg-indigo-950/30 rounded-xl p-4 border border-indigo-800/40">
+            <div class="text-xs text-indigo-300 mb-1">あなた</div>
+            <div class="text-4xl mb-2" id="res-my-icon">✌️</div>
+            <div class="font-bold text-sm text-white" id="res-my-hand-name">チョキ</div>
+            <div class="text-xs text-indigo-300 mt-1 flex items-center justify-center gap-1">
+              <span id="res-my-flag">🇯🇵</span>
+              <span id="res-my-name" class="truncate max-w-[100px]">あなた</span>
+            </div>
+            <div class="text-[10px] text-slate-400 mt-0.5">今、この瞬間</div>
+          </div>
+
+          <!-- VSマーク中央 -->
+          <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-slate-950 border border-slate-700 flex items-center justify-center text-[10px] font-black text-slate-400 shadow-lg">
+            VS
+          </div>
+        </div>
+
+        <!-- 相手のひとこと（存在する場合） -->
+        <div id="res-opp-comment-box" class="bg-slate-900/60 rounded-xl p-3 border border-slate-800/80 text-left">
+          <div class="text-[10px] text-indigo-300 mb-0.5 font-semibold">相手が時空に残したひとこと：</div>
+          <div class="text-xs text-slate-300 font-mincho italic" id="res-opp-comment">「Café du matin.」</div>
+        </div>
+
+        <!-- あなたの手が未来へ渡った告知 -->
+        <div class="text-[11px] text-slate-400 bg-indigo-950/20 border border-indigo-900/30 rounded-xl p-3">
+          🌌 あなたの<strong class="text-indigo-300" id="res-saved-hand">【チョキ】</strong>も時空の記録に刻まれました。<br>
+          明日か、あるいは1年後の誰かが出会うことになります。
+        </div>
+
+        <!-- アクションボタン群 -->
+        <div class="space-y-3 pt-2">
+          <!-- Xシェア -->
+          <button onclick="shareOnX()" class="w-full bg-slate-100 hover:bg-white text-slate-900 font-bold py-3 px-4 rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg transition active:scale-95">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            X（Twitter）で時差を共有する
+          </button>
+          
+          <!-- もう一度 -->
+          <button onclick="resetToForm()" class="w-full glass-button text-slate-200 hover:text-white font-semibold py-3 px-4 rounded-xl text-sm transition">
+            もう一度時空をつなぐ
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- 旅の足跡（履歴リスト） -->
+    <div id="section-history" class="mt-8 space-y-3">
+      <div class="text-xs font-semibold text-slate-400 px-2 tracking-wider flex items-center justify-between">
+        <span>時空の旅路（直近の対戦履歴）</span>
+        <span id="history-count" class="text-[11px] text-slate-500">0件</span>
+      </div>
+      <div id="history-list" class="space-y-2">
+        <!-- JSで履歴カードを生成 -->
+        <div class="text-center py-4 text-xs text-slate-600">まだ対戦履歴はありません</div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- フッター統一クレジット -->
+  <footer class="w-full text-center py-6 text-xs text-slate-500 border-t border-slate-900">
+    <p class="font-medium tracking-wide">
+      Created with for お絵描き楽しも委員会（しょうだい）
+    </p>
+    <p class="text-[10px] text-slate-600 mt-1">
+      完全無料・サーバーレス・オープンデータ設計
+    </p>
+  </footer>
+
+  <!-- ロジック実装スクリプト -->
+  <script>
+    // 手の定義
+    const HANDS = {
+      rock: { name: 'グー', icon: '✊' },
+      scissors: { name: 'チョキ', icon: '✌️' },
+      paper: { name: 'パー', icon: '✋' }
+    };
+
+    // 内蔵シードデータ（オフライン・初期フォールバック用：30件）
+    const SEED_DATA = [
+      { player_name: 'ハルト', country_name: '日本（東京）', country_flag: '🇯🇵', hand: 'rock', comment: '明日は晴れるといいな', past_time_text: '15分前' },
+      { player_name: 'Camille', country_name: 'フランス（パリ）', country_flag: '🇫🇷', hand: 'scissors', comment: 'Café du matin.', past_time_text: '42分前' },
+      { player_name: 'Lucas', country_name: 'アメリカ（ニューヨーク）', country_flag: '🇺🇸', hand: 'paper', comment: 'Midnight walk in Brooklyn.', past_time_text: '2時間前' },
+      { player_name: 'Oliver', country_name: 'イギリス（ロンドン）', country_flag: '🇬🇧', hand: 'rock', comment: 'Tea time janken!', past_time_text: '5時間前' },
+      { player_name: '雨萱（ユィシュエン）', country_name: '台湾（台北）', country_flag: '🇹🇼', hand: 'scissors', comment: '夜市の帰り道です', past_time_text: '8時間前' },
+      { player_name: 'Thiago', country_name: 'ブラジル（サンパウロ）', country_flag: '🇧🇷', hand: 'paper', comment: 'Boa noite do Brasil!', past_time_text: '13時間前' },
+      { player_name: 'ジフン', country_name: '韓国（ソウル）', country_flag: '🇰🇷', hand: 'rock', comment: '今日も一日お疲れ様でした', past_time_text: '18時間前' },
+      { player_name: 'Sophie', country_name: 'ドイツ（ベルリン）', country_flag: '🇩🇪', hand: 'scissors', comment: 'Guten Abend!', past_time_text: '昨日' },
+      { player_name: 'Matteo', country_name: 'イタリア（ローマ）', country_flag: '🇮🇹', hand: 'paper', comment: 'Un saluto dall Italia.', past_time_text: '昨日' },
+      { player_name: 'Liam', country_name: 'カナダ（バンクーバー）', country_flag: '🇨🇦', hand: 'rock', comment: 'Autumn leaves everywhere.', past_time_text: '2日前' },
+      { player_name: 'Mia', country_name: 'オーストラリア（シドニー）', country_flag: '🇦🇺', hand: 'scissors', comment: 'Sunny morning here!', past_time_text: '2日前' },
+      { player_name: 'Carlos', country_name: 'スペイン（マドリード）', country_flag: '🇪🇸', hand: 'paper', comment: '¡Hola desde Madrid!', past_time_text: '3日前' },
+      { player_name: 'Wei', country_name: 'シンガポール', country_flag: '🇸🇬', hand: 'rock', comment: 'Night breeze in Marina Bay.', past_time_text: '3日前' },
+      { player_name: 'Birna', country_name: 'アイスランド（レイキャビク）', country_flag: '🇮🇸', hand: 'scissors', comment: 'Waiting for auroras.', past_time_text: '4日前' },
+      { player_name: 'Diego', country_name: 'アルゼンチン（ブエノスアイレス）', country_flag: '🇦🇷', hand: 'paper', comment: 'Fútbol y amigos.', past_time_text: '4日前' },
+      { player_name: 'Amina', country_name: 'エジプト（カイロ）', country_flag: '🇪🇬', hand: 'rock', comment: 'Nile river breeze.', past_time_text: '5日前' },
+      { player_name: 'Astrid', country_name: 'スウェーデン（ストックホルム）', country_flag: '🇸🇪', hand: 'scissors', comment: 'Fika time!', past_time_text: '6日前' },
+      { player_name: 'Aarav', country_name: 'インド（ムンバイ）', country_flag: '🇮🇳', hand: 'paper', comment: 'Namaste from Mumbai!', past_time_text: '1週間前' },
+      { player_name: 'Lars', country_name: 'オランダ（アムステルダム）', country_flag: '🇳🇱', hand: 'rock', comment: 'Biking through canals.', past_time_text: '1週間前' },
+      { player_name: 'Sofia', country_name: 'メキシコ（メキシコシティ）', country_flag: '🇲🇽', hand: 'scissors', comment: 'Tacos and sunshine!', past_time_text: '10日前' },
+      { player_name: 'アオイ', country_name: '日本（京都）', country_flag: '🇯🇵', hand: 'paper', comment: '紅葉が色づいてきました', past_time_text: '10日前' },
+      { player_name: 'Noah', country_name: 'ニュージーランド', country_flag: '🇳🇿', hand: 'rock', comment: 'Kia ora!', past_time_text: '2週間前' },
+      { player_name: 'Elena', country_name: 'ギリシャ（アテネ）', country_flag: '🇬🇷', hand: 'scissors', comment: 'Ancient skies above.', past_time_text: '2週間前' },
+      { player_name: 'ユウキ', country_name: '日本（大阪）', country_flag: '🇯🇵', hand: 'rock', comment: '夜食のうどん食べてます', past_time_text: '3週間前' }
+    ];
+
+    // 最新対戦情報キャッシュ（シェア用）
+    let lastMatch = null;
+
+    // 初期化
+    document.addEventListener('DOMContentLoaded', () => {
+      // 保存された名前の復元
+      const savedName = localStorage.getItem('time_lag_player_name');
+      if (savedName) {
+        document.getElementById('input-name').value = savedName;
+      }
+      const savedCountry = localStorage.getItem('time_lag_country');
+      if (savedCountry) {
+        document.getElementById('select-country').value = savedCountry;
+      }
+
+      updateStatsUI();
+      renderHistoryUI();
+    });
+
+    // じゃんけん対戦メイン関数
+    async function playJanken(myHand) {
+      const nameInput = document.getElementById('input-name').value.trim() || '名もなき旅人';
+      const countryRaw = document.getElementById('select-country').value;
+      const [countryCode, countryName, countryFlag] = countryRaw.split('|');
+      const commentInput = document.getElementById('input-comment').value.trim();
+
+      // 設定保存
+      localStorage.setItem('time_lag_player_name', nameInput);
+      localStorage.setItem('time_lag_country', countryRaw);
+
+      // 画面切り替え：ローディングへ
+      document.getElementById('section-form').classList.add('hidden');
+      document.getElementById('section-result').classList.add('hidden');
+      document.getElementById('section-loading').classList.remove('hidden');
+
+      // 相手の手を取得（Supabaseまたはシードデータ）
+      const opponentData = await fetchOpponentData();
+
+      // 自分の手を保存（非同期送信・成否問わず進行）
+      saveMyHandToSupabase({
+        player_name: nameInput,
+        country_code: countryCode,
+        country_name: countryName,
+        country_flag: countryFlag,
+        hand: myHand,
+        comment: commentInput
+      });
+
+      // 演出ウェイト（1.2秒）
+      setTimeout(() => {
+        showResult(myHand, opponentData, {
+          name: nameInput,
+          flag: countryFlag
+        });
+      }, 1200);
+    }
+
+    // 相手データ取得ロジック
+    async function fetchOpponentData() {
+      const cfg = window.TIME_LAG_CONFIG || {};
+      if (cfg.supabaseUrl && cfg.supabaseAnonKey && cfg.supabaseAnonKey.length > 10) {
+        try {
+          // 直近100件からランダムに1件取得
+          const res = await fetch(`${cfg.supabaseUrl}/rest/v1/time_lag_janken?select=*&order=created_at.desc&limit=60`, {
+            headers: {
+              'apikey': cfg.supabaseAnonKey,
+              'Authorization': `Bearer ${cfg.supabaseAnonKey}`
+            }
+          });
+          if (res.ok) {
+            const list = await res.json();
+            if (list && list.length > 0) {
+              const item = list[Math.floor(Math.random() * list.length)];
+              return {
+                player_name: item.player_name || '誰か',
+                country_name: item.country_name || '世界のどこか',
+                country_flag: item.country_flag || '🌍',
+                hand: item.hand,
+                comment: item.comment || '',
+                past_time_text: formatRelativeTime(item.created_at)
+              };
+            }
+          }
+        } catch (e) {
+          console.warn('Supabase fetch failed, falling back to seed data:', e);
+        }
+      }
+
+      // フォールバック：シードデータからランダム抽出
+      const seed = SEED_DATA[Math.floor(Math.random() * SEED_DATA.length)];
+      return { ...seed };
+    }
+
+    // 自分の手をSupabaseへ保存
+    async function saveMyHandToSupabase(payload) {
+      const cfg = window.TIME_LAG_CONFIG || {};
+      if (cfg.supabaseUrl && cfg.supabaseAnonKey && cfg.supabaseAnonKey.length > 10) {
+        try {
+          await fetch(`${cfg.supabaseUrl}/rest/v1/time_lag_janken`, {
+            method: 'POST',
+            headers: {
+              'apikey': cfg.supabaseAnonKey,
+              'Authorization': `Bearer ${cfg.supabaseAnonKey}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=minimal'
+            },
+            body: JSON.stringify(payload)
+          });
+        } catch (e) {
+          console.warn('Failed to save hand to Supabase:', e);
+        }
+      }
+    }
+
+    // 相対時間フォーマッター
+    function formatRelativeTime(isoString) {
+      if (!isoString) return '少し前';
+      const past = new Date(isoString);
+      const now = new Date();
+      const diffMs = now - past;
+      const diffMin = Math.floor(diffMs / (1000 * 60));
+      const diffHour = Math.floor(diffMin / 60);
+      const diffDay = Math.floor(diffHour / 24);
+
+      if (diffMin < 1) return 'たった今';
+      if (diffMin < 60) return `${diffMin}分前`;
+      if (diffHour < 24) return `${diffHour}時間前`;
+      if (diffDay === 1) return '昨日';
+      if (diffDay < 7) return `${diffDay}日前`;
+      if (diffDay < 30) return `${Math.floor(diffDay / 7)}週間前`;
+      return `${Math.floor(diffDay / 30)}ヶ月前`;
+    }
+
+    // 結果表示
+    function showResult(myHand, opp, me) {
+      // 勝敗判定 (1: 勝ち, -1: 負け, 0: あいこ)
+      let outcome = 0;
+      if (myHand === opp.hand) {
+        outcome = 0;
+      } else if (
+        (myHand === 'rock' && opp.hand === 'scissors') ||
+        (myHand === 'scissors' && opp.hand === 'paper') ||
+        (myHand === 'paper' && opp.hand === 'rock')
+      ) {
+        outcome = 1;
+      } else {
+        outcome = -1;
+      }
+
+      // 詩的メッセージの選定
+      const poeticMsgs = {
+        win: [
+          `遠い空の下で誰かが残した手に、今夜のあなたの意志が届きました。`,
+          `時空を超えて旅してきた${opp.country_name}の手を、鮮やかに打ち破りました。`,
+          `過去の誰かの選択と、現在のあなたの直感が交差し、あなたが勝利を掴みました。`
+        ],
+        loss: [
+          `遠い空の向こうで放たれた一撃。時空を超えて鮮やかに受け止めました。`,
+          `時空の彼方、${opp.country_name}の誰かの強い意志が今夜届いたようです。`,
+          `過去の旅人が残した手は見事でした。あなたの手もまた、未来の誰かを試します。`
+        ],
+        draw: [
+          `違う国、違う時間。それでもふたりは、まったく同じ手を思い描いていました。`,
+          `時空を超えた奇跡のシンクロ。星空の下、二つの心が重なりました。`,
+          `国境も時間も超えて、ふたりは同じ波長で手を放ちました。`
+        ]
+      };
+
+      const resultBadge = document.getElementById('result-badge');
+      const poeticEl = document.getElementById('result-poetic-msg');
+
+      if (outcome === 1) {
+        resultBadge.className = 'inline-block px-4 py-1.5 rounded-full text-sm font-bold tracking-wider mb-2 bg-amber-500/20 text-amber-300 border border-amber-500/40';
+        resultBadge.textContent = '✨ あなたの勝ち！';
+        poeticEl.textContent = poeticMsgs.win[Math.floor(Math.random() * poeticMsgs.win.length)];
+        // 紙吹雪
+        if (typeof confetti === 'function') {
+          confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
+        }
+      } else if (outcome === -1) {
+        resultBadge.className = 'inline-block px-4 py-1.5 rounded-full text-sm font-bold tracking-wider mb-2 bg-indigo-950 text-indigo-300 border border-indigo-700/50';
+        resultBadge.textContent = '🌙 あなたの負け…';
+        poeticEl.textContent = poeticMsgs.loss[Math.floor(Math.random() * poeticMsgs.loss.length)];
+      } else {
+        resultBadge.className = 'inline-block px-4 py-1.5 rounded-full text-sm font-bold tracking-wider mb-2 bg-purple-950 text-purple-300 border border-purple-700/50';
+        resultBadge.textContent = '💫 時空を超えた あいこ！';
+        poeticEl.textContent = poeticMsgs.draw[Math.floor(Math.random() * poeticMsgs.draw.length)];
+      }
+
+      // UI反映：相手
+      document.getElementById('res-opp-icon').textContent = HANDS[opp.hand].icon;
+      document.getElementById('res-opp-hand-name').textContent = HANDS[opp.hand].name;
+      document.getElementById('res-opp-flag').textContent = opp.country_flag;
+      document.getElementById('res-opp-name').textContent = opp.player_name;
+      document.getElementById('res-opp-time').textContent = `${opp.country_name} · ${opp.past_time_text}`;
+
+      if (opp.comment && opp.comment.length > 0) {
+        document.getElementById('res-opp-comment-box').classList.remove('hidden');
+        document.getElementById('res-opp-comment').textContent = `「${opp.comment}」`;
+      } else {
+        document.getElementById('res-opp-comment-box').classList.add('hidden');
+      }
+
+      // UI反映：自分
+      document.getElementById('res-my-icon').textContent = HANDS[myHand].icon;
+      document.getElementById('res-my-hand-name').textContent = HANDS[myHand].name;
+      document.getElementById('res-my-flag').textContent = me.flag;
+      document.getElementById('res-my-name').textContent = me.name;
+      document.getElementById('res-saved-hand').textContent = `【${HANDS[myHand].name}】`;
+
+      // キャッシュ（シェア用）
+      lastMatch = {
+        outcome,
+        myHand: HANDS[myHand].name,
+        myHandIcon: HANDS[myHand].icon,
+        oppHand: HANDS[opp.hand].name,
+        oppName: opp.player_name,
+        oppFlag: opp.country_flag,
+        oppTime: opp.past_time_text,
+        oppCountry: opp.country_name
+      };
+
+      // 戦績・履歴の更新
+      recordBattle(outcome, lastMatch);
+
+      // 画面表示切り替え
+      document.getElementById('section-loading').classList.add('hidden');
+      document.getElementById('section-result').classList.remove('hidden');
+    }
+
+    // フォームへ戻る
+    function resetToForm() {
+      document.getElementById('section-result').classList.add('hidden');
+      document.getElementById('section-form').classList.remove('hidden');
+    }
+
+    // 戦績・履歴の記録とLocalStorage保存
+    function recordBattle(outcome, match) {
+      let stats = JSON.parse(localStorage.getItem('time_lag_stats') || '{"win":0,"loss":0,"draw":0}');
+      if (outcome === 1) stats.win++;
+      else if (outcome === -1) stats.loss++;
+      else stats.draw++;
+      localStorage.setItem('time_lag_stats', JSON.stringify(stats));
+
+      let history = JSON.parse(localStorage.getItem('time_lag_history') || '[]');
+      history.unshift({
+        outcome,
+        oppName: match.oppName,
+        oppFlag: match.oppFlag,
+        oppCountry: match.oppCountry,
+        oppTime: match.oppTime,
+        oppHand: match.oppHand,
+        myHand: match.myHand,
+        timestamp: new Date().toISOString()
+      });
+      // 直近10件まで保持
+      if (history.length > 10) history = history.slice(0, 10);
+      localStorage.setItem('time_lag_history', JSON.stringify(history));
+
+      updateStatsUI();
+      renderHistoryUI();
+    }
+
+    // 戦績UIの更新
+    function updateStatsUI() {
+      const stats = JSON.parse(localStorage.getItem('time_lag_stats') || '{"win":0,"loss":0,"draw":0}');
+      const el = document.getElementById('stats-summary');
+      if (el) {
+        el.textContent = `${stats.win}勝 ${stats.loss}敗 ${stats.draw}分`;
+      }
+    }
+
+    // 履歴UIの更新
+    function renderHistoryUI() {
+      const history = JSON.parse(localStorage.getItem('time_lag_history') || '[]');
+      const container = document.getElementById('history-list');
+      const countEl = document.getElementById('history-count');
+
+      countEl.textContent = `${history.length}件`;
+
+      if (history.length === 0) {
+        container.innerHTML = `<div class="text-center py-4 text-xs text-slate-600">まだ対戦履歴はありません</div>`;
+        return;
+      }
+
+      container.innerHTML = history.slice(0, 5).map(h => {
+        let badge = '';
+        if (h.outcome === 1) {
+          badge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">勝</span>`;
+        } else if (h.outcome === -1) {
+          badge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">負</span>`;
+        } else {
+          badge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-900/40 text-purple-300 border border-purple-700/40">分</span>`;
+        }
+
+        return `
+          <div class="glass-card rounded-xl p-3 flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2">
+              ${badge}
+              <span class="text-base">${h.oppFlag}</span>
+              <div>
+                <div class="font-bold text-slate-200">${escapeHtml(h.oppName)} <span class="text-[10px] text-slate-400 font-normal">(${h.oppCountry})</span></div>
+                <div class="text-[10px] text-slate-500">${h.oppTime}の手と勝負</div>
+              </div>
+            </div>
+            <div class="text-right text-[11px] text-slate-400">
+              <span class="text-indigo-300 font-bold">${h.myHand}</span> vs <span>${h.oppHand}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // 戦績リセット
+    function resetStats() {
+      if (confirm('これまでの時空戦績と履歴をリセットしますか？')) {
+        localStorage.removeItem('time_lag_stats');
+        localStorage.removeItem('time_lag_history');
+        updateStatsUI();
+        renderHistoryUI();
+      }
+    }
+
+    // X（Twitter）共有
+    function shareOnX() {
+      if (!lastMatch) return;
+      const stats = JSON.parse(localStorage.getItem('time_lag_stats') || '{"win":0,"loss":0,"draw":0}');
+      
+      let outcomeWord = '対戦しました';
+      if (lastMatch.outcome === 1) outcomeWord = '勝ちました✨';
+      else if (lastMatch.outcome === -1) outcomeWord = '負けました🌙';
+      else outcomeWord = '時空を超えてあいこでした💫';
+
+      const text = `${lastMatch.oppFlag} ${lastMatch.oppName}さん（${lastMatch.oppCountry}・${lastMatch.oppTime}）と時差じゃんけんして${outcomeWord}！\n` +
+                   `【自分】${lastMatch.myHandIcon} vs 【相手】${lastMatch.oppHand}\n` +
+                   `通算戦績：${stats.win}勝${stats.loss}敗${stats.draw}分\n\n` +
+                   `どこかの いつかの だれかと戦える「時差じゃんけん」\n` +
+                   `#時差じゃんけん #個人開発`;
+
+      const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(window.location.href)}`;
+      window.open(shareUrl, '_blank');
+    }
+
+    // 安全なエスケープ
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+  </script>
+</body>
+</html>
